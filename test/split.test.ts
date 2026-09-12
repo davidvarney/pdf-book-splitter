@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { splitPdfBySize } from "../src/split.js";
+import { getPdfPageCount, splitPdfByPageRanges, splitPdfBySize } from "../src/split.js";
 
 /**
  * Builds a test PDF with `pageCount` pages. Pages at indices in
@@ -117,5 +117,46 @@ describe("splitPdfBySize", () => {
   it("rejects a non-positive maxBytes", async () => {
     const pdf = await buildTestPdf(1);
     await expect(splitPdfBySize(pdf, { maxBytes: 0 })).rejects.toThrow();
+  });
+});
+
+describe("getPdfPageCount", () => {
+  it("returns the number of pages without producing any output", async () => {
+    const pdf = await buildTestPdf(9);
+    await expect(getPdfPageCount(pdf)).resolves.toBe(9);
+  });
+});
+
+describe("splitPdfByPageRanges", () => {
+  it("splits at the given cut points, covering every page once in order", async () => {
+    const pdf = await buildTestPdf(10);
+    const { parts } = await splitPdfByPageRanges(pdf, [3, 7]);
+
+    expect(parts.map((p) => p.pageIndices)).toEqual([[0, 1, 2], [3, 4, 5, 6], [7, 8, 9]]);
+    assertCoversAllPagesInOrder(parts, 10);
+    for (const part of parts) {
+      // Each part should be a real, loadable PDF with the expected page count.
+      const doc = await PDFDocument.load(part.bytes);
+      expect(doc.getPageCount()).toBe(part.pageIndices.length);
+    }
+  });
+
+  it("produces a single part when there are no cut points", async () => {
+    const pdf = await buildTestPdf(5);
+    const { parts } = await splitPdfByPageRanges(pdf, []);
+    expect(parts).toHaveLength(1);
+    assertCoversAllPagesInOrder(parts, 5);
+  });
+
+  it("does not apply any size limit, even with a heavy page in a part", async () => {
+    const pdf = await buildTestPdf(4, [1]);
+    const { parts } = await splitPdfByPageRanges(pdf, [2]);
+    assertCoversAllPagesInOrder(parts, 4);
+    expect(parts).toHaveLength(2);
+  });
+
+  it("rejects an out-of-range cut point", async () => {
+    const pdf = await buildTestPdf(5);
+    await expect(splitPdfByPageRanges(pdf, [5])).rejects.toThrow(/Invalid split point/);
   });
 });

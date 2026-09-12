@@ -1,4 +1,5 @@
 import { PDFDocument } from "pdf-lib";
+import { computePageIndexGroups } from "./pageRanges.js";
 
 export interface SplitPart {
   /** Zero-based indices of the source pages included in this part, in order. */
@@ -18,6 +19,16 @@ export interface SplitOptions {
   maxBytes: number;
   /** Optional progress callback, called after each source page is placed into a part. */
   onProgress?: (pagesProcessed: number, totalPages: number) => void;
+}
+
+// Builds and serializes a candidate part from a single copyPages call, so
+// shared resources (fonts, images) referenced by multiple pages are
+// deduplicated correctly within that candidate.
+async function buildPart(source: PDFDocument, indices: number[]): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const pages = await doc.copyPages(source, indices);
+  for (const page of pages) doc.addPage(page);
+  return doc.save();
 }
 
 /**
@@ -45,16 +56,8 @@ export async function splitPdfBySize(
   const parts: SplitPart[] = [];
   const warnings: string[] = [];
 
-  // Builds and serializes a candidate part from a single copyPages call, so
-  // shared resources (fonts, images) referenced by multiple pages are
-  // deduplicated correctly within that candidate.
-  const buildCandidate = async (startIndex: number, count: number): Promise<Uint8Array> => {
-    const doc = await PDFDocument.create();
-    const indices = Array.from({ length: count }, (_, i) => startIndex + i);
-    const pages = await doc.copyPages(source, indices);
-    for (const page of pages) doc.addPage(page);
-    return doc.save();
-  };
+  const buildCandidate = (startIndex: number, count: number) =>
+    buildPart(source, Array.from({ length: count }, (_, i) => startIndex + i));
 
   let pageStart = 0;
   while (pageStart < pageCount) {
@@ -96,4 +99,33 @@ export async function splitPdfBySize(
   }
 
   return { parts, warnings };
+}
+
+/** Returns the page count of a PDF, without building any split output. */
+export async function getPdfPageCount(sourceBytes: Uint8Array): Promise<number> {
+  const source = await PDFDocument.load(sourceBytes);
+  return source.getPageCount();
+}
+
+/**
+ * Splits a source PDF at explicit, user-chosen page numbers. Each cut point
+ * is the last page of one part; e.g. cutPoints [50, 120] on a 200-page PDF
+ * produces parts covering pages 1-50, 51-120, and 121-200. No size limit is
+ * applied — the caller has taken full manual control of where files break.
+ */
+export async function splitPdfByPageRanges(
+  sourceBytes: Uint8Array,
+  cutPoints: number[]
+): Promise<{ parts: SplitPart[] }> {
+  const source = await PDFDocument.load(sourceBytes);
+  const pageCount = source.getPageCount();
+  const groups = computePageIndexGroups(cutPoints, pageCount);
+
+  const parts: SplitPart[] = [];
+  for (const pageIndices of groups) {
+    const bytes = await buildPart(source, pageIndices);
+    parts.push({ pageIndices, bytes });
+  }
+
+  return { parts };
 }
