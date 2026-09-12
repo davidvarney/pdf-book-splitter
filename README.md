@@ -33,7 +33,7 @@ numerically — in the order they should be read.
 
 ## Install / build
 
-Requires Node.js 18+.
+Requires Node.js 22.13+ (the version needed by this project's test tooling).
 
 ```
 npm install
@@ -116,7 +116,13 @@ examples.
 npm run test        # run the test suite once
 npm run test:watch  # watch mode
 npm run typecheck   # type-check without emitting
+npm run lint        # lint with ESLint
+npm run lint:fix    # lint and auto-fix what it can
 ```
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs lint, typecheck,
+and the test suite on every pull request (on open and on each new push to
+it), across the Node versions this project supports.
 
 ## Roadmap
 
