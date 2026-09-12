@@ -120,9 +120,11 @@ npm run lint        # lint with ESLint
 npm run lint:fix    # lint and auto-fix what it can
 ```
 
-A GitHub Actions workflow (`.github/workflows/ci.yml`) runs lint, typecheck,
-and the test suite on every pull request (on open and on each new push to
-it), across the Node versions this project supports.
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every pull
+request (on open and on each new push to it), across the Node versions this
+project supports. Lint, typecheck, and test each run as their own separate
+job, so a failure in one shows up as its own check on the PR instead of
+being buried in shared step logs.
 
 ## Roadmap
 
