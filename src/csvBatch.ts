@@ -61,7 +61,7 @@ export function parseCsvBatch(csvContent: string): CsvBatchRow[] {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`Could not parse CSV: ${message}`);
+    throw new Error(`Could not parse CSV: ${message}`, { cause: err });
   }
 
   if (records.length === 0) {
