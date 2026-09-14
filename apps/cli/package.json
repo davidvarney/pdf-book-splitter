@@ -1,0 +1,27 @@
+{
+  "name": "pdf-book-splitter",
+  "version": "0.1.0",
+  "description": "Split a PDF book into multiple PDF files no larger than a target size, without splitting pages.",
+  "type": "module",
+  "bin": {
+    "pdf-book-splitter": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@pdf-book-splitter/core": "^0.1.0",
+    "commander": "^12.1.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

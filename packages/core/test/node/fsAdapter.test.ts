@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { findPdfFiles, partitionByThreshold } from "../src/batch.js";
+import { findPdfFiles } from "../../src/node/fsAdapter.js";
 
 describe("findPdfFiles", () => {
   let dir: string;
@@ -39,20 +39,5 @@ describe("findPdfFiles", () => {
   it("returns an empty list for a directory with no PDFs", async () => {
     const files = await findPdfFiles(dir);
     expect(files).toEqual([]);
-  });
-});
-
-describe("partitionByThreshold", () => {
-  it("splits files larger than the threshold from those at or under it", () => {
-    const files = [
-      { fileName: "a", filePath: "/a", size: 100 },
-      { fileName: "b", filePath: "/b", size: 200 },
-      { fileName: "c", filePath: "/c", size: 300 },
-    ];
-
-    const { toSplit, skipped } = partitionByThreshold(files, 200);
-
-    expect(toSplit.map((f) => f.fileName)).toEqual(["c"]);
-    expect(skipped.map((f) => f.fileName)).toEqual(["a", "b"]);
   });
 });

@@ -1,5 +1,4 @@
-import { readdir, stat } from "node:fs/promises";
-import path from "node:path";
+import type { FileSystemPort } from "./io/types.js";
 
 export interface ScannedFile {
   fileName: string;
@@ -10,19 +9,24 @@ export interface ScannedFile {
 /**
  * Lists the PDF files directly inside a directory (non-recursive, so any
  * output subfolders a previous split run created there aren't re-scanned),
- * sorted by name.
+ * sorted by name. Takes a FileSystemPort so it has no host-specific imports
+ * of its own; see ./node/fsAdapter.ts for the Node-backed implementation
+ * the CLI uses.
  */
-export async function findPdfFiles(dirPath: string): Promise<ScannedFile[]> {
-  const entries = await readdir(dirPath, { withFileTypes: true });
+export async function findPdfFilesUsing(
+  dirPath: string,
+  fs: FileSystemPort
+): Promise<ScannedFile[]> {
+  const entries = await fs.listDir(dirPath);
   const pdfEntries = entries
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".pdf"))
+    .filter((entry) => entry.isFile && entry.name.toLowerCase().endsWith(".pdf"))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const results: ScannedFile[] = [];
   for (const entry of pdfEntries) {
-    const filePath = path.join(dirPath, entry.name);
-    const info = await stat(filePath);
-    results.push({ fileName: entry.name, filePath, size: info.size });
+    const filePath = fs.joinPath(dirPath, entry.name);
+    const size = await fs.statSize(filePath);
+    results.push({ fileName: entry.name, filePath, size });
   }
   return results;
 }

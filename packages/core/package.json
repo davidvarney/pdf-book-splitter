@@ -1,0 +1,32 @@
+{
+  "name": "@pdf-book-splitter/core",
+  "version": "0.1.0",
+  "description": "Platform-agnostic PDF splitting engine (no Node-only APIs in its main entry point) shared by the CLI and future desktop/mobile shells.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "default": "./dist/node/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bench:generate": "tsx benchmark/generateLargePdf.ts",
+    "bench:run": "tsx benchmark/run.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "csv-parse": "^7.0.2",
+    "pdf-lib": "^1.17.1"
+  }
+}

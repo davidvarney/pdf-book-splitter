@@ -1,9 +1,6 @@
-import { parseSize } from "./size.js";
-import { parseCutPoints } from "./pageRanges.js";
+import { parseSize, parseCutPoints, type SplitStrategy } from "@pdf-book-splitter/core";
 
-export type SplitStrategy =
-  | { kind: "size"; maxBytes: number }
-  | { kind: "pages"; cutPoints: number[] };
+export type { SplitStrategy };
 
 export interface SplitFileInvocation {
   mode: "file";

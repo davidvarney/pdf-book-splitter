@@ -39,6 +39,21 @@ my-book_part12_of_12.pdf
 The part number is zero-padded so files always sort — alphabetically and
 numerically — in the order they should be read.
 
+## Repository structure
+
+This is an npm workspace with the splitting engine and the CLI in separate
+packages, so the same engine can be reused by future desktop/mobile shells
+without a rewrite (see `docs/platform-release-plan.md`):
+
+- `packages/core` — the platform-agnostic splitting engine (`@pdf-book-splitter/core`).
+  Its main entry point has no Node-only imports; a Node-backed directory-scan
+  adapter lives at the `@pdf-book-splitter/core/node` subpath for hosts (like
+  the CLI) that need it.
+- `apps/cli` — the `pdf-book-splitter` CLI, a thin Commander wrapper around
+  `packages/core`.
+- `examples/browser-smoke` — a throwaway page proving the core runs in a
+  browser with zero Node APIs; not part of the published package.
+
 ## Install / build
 
 Requires Node.js 22.13+ (the version needed by this project's test tooling).
@@ -53,7 +68,7 @@ npm run build
 ### Split a single file
 
 ```
-node dist/cli.js split <input.pdf> (--size <size> | --split-at <pages>) [--out <dir>]
+node apps/cli/dist/cli.js split <input.pdf> (--size <size> | --split-at <pages>) [--out <dir>]
 ```
 
 - `<input.pdf>` — path to the source PDF.
@@ -67,7 +82,7 @@ node dist/cli.js split <input.pdf> (--size <size> | --split-at <pages>) [--out <
   input file, e.g. `my-novel/`, created next to it).
 
 ```
-node dist/cli.js split ~/Books/my-novel.pdf --size 25MB
+node apps/cli/dist/cli.js split ~/Books/my-novel.pdf --size 25MB
 ```
 
 ```
@@ -81,7 +96,7 @@ Done. Wrote 4 file(s) to "/Users/you/Books/my-novel".
 ```
 
 ```
-node dist/cli.js split ~/Books/my-novel.pdf --split-at 140,283,426
+node apps/cli/dist/cli.js split ~/Books/my-novel.pdf --split-at 140,283,426
 ```
 
 ```
@@ -96,7 +111,7 @@ Wrote 4 file(s) to "/Users/you/Books/my-novel".
 ### Split every oversized PDF in a directory
 
 ```
-node dist/cli.js split --dir <directory> --size <size> [--threshold <size>] [--interactive] [--out <dir>]
+node apps/cli/dist/cli.js split --dir <directory> --size <size> [--threshold <size>] [--interactive] [--out <dir>]
 ```
 
 - `--dir, -d` — a directory to scan instead of a single file. Only the
@@ -118,7 +133,7 @@ node dist/cli.js split --dir <directory> --size <size> [--threshold <size>] [--i
   (default: next to the original file, same as single-file mode).
 
 ```
-node dist/cli.js split --dir ~/Books --size 25MB
+node apps/cli/dist/cli.js split --dir ~/Books --size 25MB
 ```
 
 ```
@@ -139,7 +154,7 @@ Add `--interactive` to be asked for page numbers before each oversized file
 is split, instead of always splitting by size:
 
 ```
-node dist/cli.js split --dir ~/Books --size 25MB --interactive
+node apps/cli/dist/cli.js split --dir ~/Books --size 25MB --interactive
 ```
 
 ```
@@ -156,7 +171,7 @@ folder), describe the batch as a CSV and let the tool process it in one
 go. Generate a template first so the format is never guesswork:
 
 ```
-node dist/cli.js split --csv-template [path]
+node apps/cli/dist/cli.js split --csv-template [path]
 ```
 
 Writes a commented template CSV (default: `pdf-book-splitter-template.csv`
@@ -166,7 +181,7 @@ even if you're not sure what's already at that path. Fill in the template,
 then run:
 
 ```
-node dist/cli.js split --csv <file> [--out <dir>]
+node apps/cli/dist/cli.js split --csv <file> [--out <dir>]
 ```
 
 - `--csv, -c` — path to the batch CSV. Mutually exclusive with a positional
@@ -189,9 +204,9 @@ given and is well-formed — **before** anything is split, and every problem
 found is reported together in one error, not one row at a time.
 
 ```
-node dist/cli.js split --csv-template ./books/batch.csv
+node apps/cli/dist/cli.js split --csv-template ./books/batch.csv
 # edit ./books/batch.csv, then:
-node dist/cli.js split --csv ./books/batch.csv
+node apps/cli/dist/cli.js split --csv ./books/batch.csv
 ```
 
 ```
@@ -209,7 +224,7 @@ Done. Split 3 file(s) listed in "/Users/you/books/batch.csv".
 ```
 
 Once installed globally or linked, the same commands work as
-`pdf-book-splitter split ...`. Run `node dist/cli.js split --help` (or
+`pdf-book-splitter split ...`. Run `node apps/cli/dist/cli.js split --help` (or
 `pdf-book-splitter split --help`) for the full option reference and more
 examples.
 

@@ -1,0 +1,15 @@
+{
+  "name": "browser-smoke-example",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Throwaway Phase 1 proof that @pdf-book-splitter/core runs in a browser with zero Node APIs. Not shipped.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0"
+  }
+}
