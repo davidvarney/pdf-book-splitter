@@ -47,10 +47,14 @@ without a rewrite (see `docs/platform-release-plan.md`):
 
 - `packages/core` — the platform-agnostic splitting engine (`@pdf-book-splitter/core`).
   Its main entry point has no Node-only imports; a Node-backed directory-scan
-  adapter lives at the `@pdf-book-splitter/core/node` subpath for hosts (like
-  the CLI) that need it.
+  and CSV-batch adapter lives at the `@pdf-book-splitter/core/node` subpath
+  for hosts (like the CLI) that need it.
 - `apps/cli` — the `pdf-book-splitter` CLI, a thin Commander wrapper around
   `packages/core`.
+- `apps/web` — the shared web UI (`@pdf-book-splitter/web`, React + Vite),
+  splitting PDFs entirely client-side against `packages/core`'s browser
+  entry point, with no server upload. This is the same UI the Tauri
+  (desktop) and Capacitor (mobile) shells wrap in later phases.
 - `examples/browser-smoke` — a throwaway page proving the core runs in a
   browser with zero Node APIs; not part of the published package.
 
@@ -228,6 +232,22 @@ Once installed globally or linked, the same commands work as
 `pdf-book-splitter split --help`) for the full option reference and more
 examples.
 
+## Web UI
+
+```
+npm run dev:web      # start the web UI's dev server (apps/web)
+```
+
+Open a PDF via drag-and-drop or the file picker, choose size- or
+page-range-based splitting (or select multiple files for batch mode), and
+download the resulting parts — everything runs in your browser, with no
+PDF ever uploaded to a server.
+
+Every push to `main` that touches `apps/web` or `packages/core` rebuilds
+and redeploys it to GitHub Pages (`.github/workflows/deploy-web.yml`),
+once Pages is enabled for this repository under Settings > Pages
+("Source: GitHub Actions").
+
 ## Development
 
 ```
@@ -246,6 +266,8 @@ being buried in shared step logs.
 
 ## Roadmap
 
-This CLI is the first milestone. The plan is to validate the core
-splitting logic here, then build native front-ends on top of the same
-approach for macOS, iOS, Linux (Ubuntu/Fedora), Android, and Windows.
+The CLI and the platform-agnostic core it's built on were the first
+milestone; the shared web UI in `apps/web` is the next one. The plan is to
+wrap that same UI in native shells for macOS, Windows, Linux
+(Ubuntu/Fedora), iOS, and Android without rewriting it — see
+`docs/platform-release-plan.md` for the full phase-by-phase plan.
