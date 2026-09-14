@@ -7,19 +7,19 @@ import {
   splitPdfBySize,
   splitPdfByPageRanges,
   getPdfPageCount,
-  type SplitPart,
-} from "./split.js";
-import { buildPartFileName } from "./naming.js";
-import { formatSize } from "./size.js";
-import { findPdfFiles, partitionByThreshold, type ScannedFile } from "./batch.js";
-import { resolveSplitInvocation, type SplitStrategy } from "./cliArgs.js";
-import { parseCutPoints } from "./pageRanges.js";
-import {
+  buildPartFileName,
+  formatSize,
+  partitionByThreshold,
+  parseCutPoints,
   parseCsvBatch,
   resolveCsvBatchRowsOrErrors,
   CSV_TEMPLATE_CONTENT,
   DEFAULT_CSV_TEMPLATE_FILENAME,
-} from "./csvBatch.js";
+  type SplitPart,
+  type ScannedFile,
+} from "@pdf-book-splitter/core";
+import { findPdfFiles } from "@pdf-book-splitter/core/node";
+import { resolveSplitInvocation, type SplitStrategy } from "./cliArgs.js";
 
 const program = new Command();
 

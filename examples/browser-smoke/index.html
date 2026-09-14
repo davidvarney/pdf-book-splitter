@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>pdf-book-splitter core &mdash; browser smoke test</title>
+  </head>
+  <body>
+    <h1>Browser smoke test: split by size, entirely client-side</h1>
+    <p>
+      Calls <code>@pdf-book-splitter/core</code>'s <code>splitPdfBySize</code>
+      directly in the browser, with no Node APIs and no server upload, to
+      prove the core package runs unmodified outside Node.
+    </p>
+    <p>
+      <label>PDF file: <input id="file" type="file" accept="application/pdf" /></label>
+    </p>
+    <p>
+      <label>Max size per part: <input id="size" type="text" value="5MB" /></label>
+      <button id="run">Split</button>
+    </p>
+    <pre id="log"></pre>
+    <ul id="results"></ul>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

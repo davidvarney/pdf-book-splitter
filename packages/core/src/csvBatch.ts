@@ -1,7 +1,10 @@
 import { parse } from "csv-parse/sync";
 import { parseSize } from "./size.js";
 import { parseCutPoints } from "./pageRanges.js";
-import type { SplitStrategy } from "./cliArgs.js";
+
+export type SplitStrategy =
+  | { kind: "size"; maxBytes: number }
+  | { kind: "pages"; cutPoints: number[] };
 
 export const DEFAULT_CSV_TEMPLATE_FILENAME = "pdf-book-splitter-template.csv";
 
