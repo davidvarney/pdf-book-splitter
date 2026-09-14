@@ -11,14 +11,16 @@ import {
   formatSize,
   partitionByThreshold,
   parseCutPoints,
+  type SplitPart,
+  type ScannedFile,
+} from "@pdf-book-splitter/core";
+import {
+  findPdfFiles,
   parseCsvBatch,
   resolveCsvBatchRowsOrErrors,
   CSV_TEMPLATE_CONTENT,
   DEFAULT_CSV_TEMPLATE_FILENAME,
-  type SplitPart,
-  type ScannedFile,
-} from "@pdf-book-splitter/core";
-import { findPdfFiles } from "@pdf-book-splitter/core/node";
+} from "@pdf-book-splitter/core/node";
 import { resolveSplitInvocation, type SplitStrategy } from "./cliArgs.js";
 
 const program = new Command();

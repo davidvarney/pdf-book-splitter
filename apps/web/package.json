@@ -1,0 +1,26 @@
+{
+  "name": "@pdf-book-splitter/web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shared web UI for pdf-book-splitter: splits PDFs entirely client-side against @pdf-book-splitter/core, no server upload. The same build is wrapped unmodified by the Tauri (desktop) and Capacitor (mobile) shells in later phases.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@pdf-book-splitter/core": "^0.1.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "pdf-lib": "^1.17.1",
+    "typescript": "^5.7.2",
+    "vite": "^8.0.0"
+  }
+}
