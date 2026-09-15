@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { parseSize, parseCutPoints, formatSize } from "@pdf-book-splitter/core";
+import { parseSize, formatSize } from "@pdf-book-splitter/core";
 import { Dropzone } from "./components/Dropzone.js";
+import { PageSplitPicker } from "./components/PageSplitPicker.js";
 import { ResultsList } from "./components/ResultsList.js";
+import { toggleCutPoint } from "./lib/cutPoints.js";
 import {
   isTauri,
   listenForNativeFileDrop,
@@ -19,7 +21,7 @@ export function App() {
   const [singleStrategyKind, setSingleStrategyKind] = useState<SingleStrategyKind>("size");
   const [files, setFiles] = useState<SourceFile[]>([]);
   const [sizeText, setSizeText] = useState("25MB");
-  const [cutPointsText, setCutPointsText] = useState("");
+  const [cutPoints, setCutPoints] = useState<number[]>([]);
   const [thresholdText, setThresholdText] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
@@ -30,6 +32,7 @@ export function App() {
 
   function handleFilesPicked(picked: SourceFile[]) {
     setFiles(mode === "batch" ? picked : picked.slice(0, 1));
+    setCutPoints([]);
   }
 
   // Native menu bar (File > Open PDF...) and native window drag-and-drop
@@ -58,6 +61,7 @@ export function App() {
   function selectMode(next: Mode) {
     setMode(next);
     setFiles([]);
+    setCutPoints([]);
     setResults([]);
     setErrorMessage(null);
     setLogLines([]);
@@ -100,11 +104,8 @@ export function App() {
           );
           setResults([result]);
         } else {
-          let cutPoints: number[];
-          try {
-            cutPoints = parseCutPoints(cutPointsText);
-          } catch (err) {
-            setErrorMessage((err as Error).message);
+          if (cutPoints.length === 0) {
+            setErrorMessage("Mark at least one page as a split point first.");
             return;
           }
           log(`Splitting at pages ${cutPoints.join(", ")}...`);
@@ -207,7 +208,7 @@ export function App() {
             Page numbers
           </label>
 
-          {singleStrategyKind === "size" ? (
+          {singleStrategyKind === "size" && (
             <label className="controls__field">
               Max size per file
               <input
@@ -217,18 +218,24 @@ export function App() {
                 placeholder="e.g. 25MB"
               />
             </label>
-          ) : (
-            <label className="controls__field">
-              Split after pages
-              <input
-                type="text"
-                value={cutPointsText}
-                onChange={(e) => setCutPointsText(e.target.value)}
-                placeholder="e.g. 50,120,180"
-              />
-            </label>
           )}
         </fieldset>
+      )}
+
+      {mode === "single" && singleStrategyKind === "pages" && (
+        <>
+          {files.length > 0 ? (
+            <PageSplitPicker
+              key={`${files[0].name}-${files[0].size}`}
+              source={files[0]}
+              cutPoints={cutPoints}
+              onToggle={(page) => setCutPoints((prev) => toggleCutPoint(prev, page))}
+              onClear={() => setCutPoints([])}
+            />
+          ) : (
+            <p className="page-picker__hint">Choose a PDF above to see its pages and mark split points.</p>
+          )}
+        </>
       )}
 
       {mode === "batch" && (
