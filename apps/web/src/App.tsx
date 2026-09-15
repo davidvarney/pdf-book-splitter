@@ -1,21 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { parseSize, parseCutPoints, formatSize } from "@pdf-book-splitter/core";
 import { Dropzone } from "./components/Dropzone.js";
 import { ResultsList } from "./components/ResultsList.js";
+import { isTauri, listenForNativeFileDrop, listenForNativeOpenMenu, saveResultsViaDialog } from "./lib/platform.js";
 import { splitBatch, splitOneFile, type FileSplitResult, type SourceFile } from "./lib/splitRunner.js";
 
 type Mode = "single" | "batch";
 type SingleStrategyKind = "size" | "pages";
 
-async function toSourceFile(file: File): Promise<SourceFile> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  return { name: file.name, size: file.size, bytes };
-}
-
 export function App() {
   const [mode, setMode] = useState<Mode>("single");
   const [singleStrategyKind, setSingleStrategyKind] = useState<SingleStrategyKind>("size");
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<SourceFile[]>([]);
   const [sizeText, setSizeText] = useState("25MB");
   const [cutPointsText, setCutPointsText] = useState("");
   const [thresholdText, setThresholdText] = useState("");
@@ -23,6 +19,36 @@ export function App() {
   const [logLines, setLogLines] = useState<string[]>([]);
   const [results, setResults] = useState<FileSplitResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [savedTo, setSavedTo] = useState<string | null>(null);
+  const nativeShell = isTauri();
+
+  function handleFilesPicked(picked: SourceFile[]) {
+    setFiles(mode === "batch" ? picked : picked.slice(0, 1));
+  }
+
+  // Native menu bar (File > Open PDF...) and native window drag-and-drop
+  // both bypass the DOM, so they're wired up here instead of in Dropzone.
+  useEffect(() => {
+    if (!nativeShell) return;
+    let unlistenMenu: (() => void) | undefined;
+    let unlistenDrop: (() => void) | undefined;
+
+    listenForNativeOpenMenu(() => {
+      void (async () => {
+        const { pickFilesViaDialog } = await import("./lib/platform.js");
+        const picked = await pickFilesViaDialog(mode === "batch");
+        if (picked.length > 0) handleFilesPicked(picked);
+      })();
+    }).then((fn) => (unlistenMenu = fn));
+
+    listenForNativeFileDrop((picked) => handleFilesPicked(picked)).then((fn) => (unlistenDrop = fn));
+
+    return () => {
+      unlistenMenu?.();
+      unlistenDrop?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nativeShell, mode]);
 
   function selectMode(next: Mode) {
     setMode(next);
@@ -30,6 +56,7 @@ export function App() {
     setResults([]);
     setErrorMessage(null);
     setLogLines([]);
+    setSavedTo(null);
   }
 
   function log(line: string) {
@@ -40,6 +67,7 @@ export function App() {
     setErrorMessage(null);
     setResults([]);
     setLogLines([]);
+    setSavedTo(null);
 
     if (files.length === 0) {
       setErrorMessage("Choose a PDF file first.");
@@ -57,7 +85,7 @@ export function App() {
     setIsRunning(true);
     try {
       if (mode === "single") {
-        const source = await toSourceFile(files[0]);
+        const source = files[0];
         log(`Reading "${source.name}" (${formatSize(source.size)})...`);
 
         if (singleStrategyKind === "size") {
@@ -89,9 +117,8 @@ export function App() {
           }
         }
 
-        const sources = await Promise.all(files.map(toSourceFile));
-        log(`Splitting ${sources.length} file(s), skipping any at or under ${formatSize(thresholdBytes)}...`);
-        const batchResults = await splitBatch(sources, { maxBytes, thresholdBytes }, (fileName, done, total) =>
+        log(`Splitting ${files.length} file(s), skipping any at or under ${formatSize(thresholdBytes)}...`);
+        const batchResults = await splitBatch(files, { maxBytes, thresholdBytes }, (fileName, done, total) =>
           log(`  ${fileName}: page ${done}/${total}`)
         );
         setResults(batchResults);
@@ -104,11 +131,21 @@ export function App() {
     }
   }
 
+  async function handleSaveToFolder() {
+    setErrorMessage(null);
+    try {
+      const chosenDir = await saveResultsViaDialog(results);
+      if (chosenDir) setSavedTo(chosenDir);
+    } catch (err) {
+      setErrorMessage((err as Error).message);
+    }
+  }
+
   return (
     <main className="app">
       <h1>PDF Book Splitter</h1>
       <p className="app__subtitle">
-        Split a PDF into smaller files by size or by page number &mdash; entirely in your browser. Nothing is
+        Split a PDF into smaller files by size or by page number &mdash; entirely on your device. Nothing is
         uploaded to a server.
       </p>
 
@@ -131,7 +168,7 @@ export function App() {
         </button>
       </div>
 
-      <Dropzone multiple={mode === "batch"} disabled={isRunning} onFiles={setFiles} />
+      <Dropzone multiple={mode === "batch"} disabled={isRunning} onFiles={handleFilesPicked} />
 
       {files.length > 0 && (
         <ul className="selected-files">
@@ -221,7 +258,18 @@ export function App() {
 
       {logLines.length > 0 && <pre className="log">{logLines.join("\n")}</pre>}
 
-      <ResultsList results={results} />
+      {nativeShell ? (
+        results.length > 0 && (
+          <div className="save-panel">
+            <button className="run-button" onClick={handleSaveToFolder}>
+              Save to folder...
+            </button>
+            {savedTo && <p className="save-panel__done">Saved to {savedTo}</p>}
+          </div>
+        )
+      ) : (
+        <ResultsList results={results} />
+      )}
     </main>
   );
 }

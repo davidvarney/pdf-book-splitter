@@ -129,3 +129,12 @@ body {
 .results__warning {
   color: #b8860b;
 }
+
+.save-panel {
+  margin-top: 1.5rem;
+}
+
+.save-panel__done {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
