@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { parseSize, parseCutPoints, formatSize } from "@pdf-book-splitter/core";
 import { Dropzone } from "./components/Dropzone.js";
 import { ResultsList } from "./components/ResultsList.js";
-import { isTauri, listenForNativeFileDrop, listenForNativeOpenMenu, saveResultsViaDialog } from "./lib/platform.js";
+import {
+  isTauri,
+  listenForNativeFileDrop,
+  listenForNativeOpenMenu,
+  pickFilesViaDialog,
+  saveResultsViaDialog,
+} from "./lib/platform.js";
 import { splitBatch, splitOneFile, type FileSplitResult, type SourceFile } from "./lib/splitRunner.js";
 
 type Mode = "single" | "batch";
@@ -35,7 +41,6 @@ export function App() {
 
     listenForNativeOpenMenu(() => {
       void (async () => {
-        const { pickFilesViaDialog } = await import("./lib/platform.js");
         const picked = await pickFilesViaDialog(mode === "batch");
         if (picked.length > 0) handleFilesPicked(picked);
       })();
