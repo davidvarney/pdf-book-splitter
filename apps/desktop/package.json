@@ -1,0 +1,15 @@
+{
+  "name": "@pdf-book-splitter/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "macOS/Windows/Linux desktop app for pdf-book-splitter: wraps apps/web in Tauri with native file dialogs and a native menu bar, unmodified otherwise.",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}
