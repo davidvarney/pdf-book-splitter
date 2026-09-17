@@ -129,3 +129,129 @@ body {
 .results__warning {
   color: #b8860b;
 }
+
+.save-panel {
+  margin-top: 1.5rem;
+}
+
+.save-panel__done {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+.page-picker {
+  margin: 1rem 0;
+}
+
+.page-picker__toolbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-picker__hint {
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+.page-picker__clear {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.page-picker__loading {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.page-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.page-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.4rem;
+  border: 2px solid transparent;
+}
+
+.page-thumb:hover {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.page-thumb:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page-thumb--marked {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.page-thumb--disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.page-thumb__canvas-wrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.page-thumb__canvas-wrap--loading {
+  animation: page-thumb-pulse 1.4s ease-in-out infinite;
+}
+
+.page-thumb__canvas-wrap canvas {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.page-thumb__number {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.page-thumb__badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1.1;
+}
+
+@keyframes page-thumb-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

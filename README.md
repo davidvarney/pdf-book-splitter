@@ -54,7 +54,13 @@ without a rewrite (see `docs/platform-release-plan.md`):
 - `apps/web` — the shared web UI (`@pdf-book-splitter/web`, React + Vite),
   splitting PDFs entirely client-side against `packages/core`'s browser
   entry point, with no server upload. This is the same UI the Tauri
-  (desktop) and Capacitor (mobile) shells wrap in later phases.
+  (desktop) and Capacitor (mobile) shells wrap in later phases. When
+  running inside Tauri, `apps/web/src/lib/platform.ts` swaps the browser's
+  `<input type=file>`/download-link flow for native open/save dialogs; a
+  plain browser build never loads that code path.
+- `apps/desktop` (`@pdf-book-splitter/desktop`) — the macOS/Windows/Linux
+  desktop app: a Tauri shell (`src-tauri/`, Rust) wrapping `apps/web`
+  unmodified, adding native file-open/save dialogs and a native menu bar.
 - `examples/browser-smoke` — a throwaway page proving the core runs in a
   browser with zero Node APIs; not part of the published package.
 
@@ -248,6 +254,27 @@ and redeploys it to GitHub Pages (`.github/workflows/deploy-web.yml`),
 once Pages is enabled for this repository under Settings > Pages
 ("Source: GitHub Actions").
 
+## Desktop app (macOS/Windows/Linux)
+
+Requires the [Rust toolchain](https://rustup.rs) in addition to Node, plus
+the platform's native webview dependencies (already present on macOS via
+Xcode Command Line Tools; see the
+[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for
+Windows/Linux).
+
+```
+npm run dev:desktop     # launch the app against a live dev server
+npm run build:desktop   # produce a release .app/.dmg (macOS) at
+                         # apps/desktop/src-tauri/target/release/bundle/
+```
+
+`apps/desktop` wraps `apps/web` unmodified in Tauri, so it's the same UI,
+plus native open/save dialogs and a native menu bar (File > Open PDF...)
+in place of the browser's `<input type=file>`. A release build here is
+currently **ad-hoc signed only** — code-signing and notarization (so
+Gatekeeper doesn't warn on first launch) need an Apple Developer Program
+account, which isn't wired into the build yet.
+
 ## Development
 
 ```
@@ -266,8 +293,9 @@ being buried in shared step logs.
 
 ## Roadmap
 
-The CLI and the platform-agnostic core it's built on were the first
-milestone; the shared web UI in `apps/web` is the next one. The plan is to
-wrap that same UI in native shells for macOS, Windows, Linux
-(Ubuntu/Fedora), iOS, and Android without rewriting it — see
-`docs/platform-release-plan.md` for the full phase-by-phase plan.
+The CLI, the platform-agnostic core, and the shared web UI are done; the
+macOS desktop app in `apps/desktop` is the current milestone, pending
+Apple Developer Program code-signing/notarization. Windows and Linux
+targets reuse the same Tauri project next, then iOS/Android wrap the same
+web UI again via Capacitor — see `docs/platform-release-plan.md` for the
+full phase-by-phase plan.
