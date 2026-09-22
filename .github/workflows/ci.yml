@@ -227,5 +227,5 @@ jobs:
           RPM_DIR="apps/desktop/src-tauri/target/release/bundle/rpm"
           RPM_FILE="$(basename "$(find "$RPM_DIR" -name '*.rpm' | head -n1)")"
           if [ -z "$RPM_FILE" ]; then echo "No .rpm found"; exit 1; fi
-          docker run --rm -v "$PWD/$RPM_DIR":/rpms fedora:latest \
-            bash -c "rpm -ivh /rpms/$RPM_FILE && rpm -q \$(rpm -qp --qf '%{NAME}' /rpms/$RPM_FILE)"
+          docker run --rm -e RPM_FILE="$RPM_FILE" -v "$PWD/$RPM_DIR":/rpms fedora:latest \
+            bash -c 'set -e; rpm -ivh "/rpms/$RPM_FILE"; rpm -q "$(rpm -qp --qf "%{NAME}" "/rpms/$RPM_FILE")"'
