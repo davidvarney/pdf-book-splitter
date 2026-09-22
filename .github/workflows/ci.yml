@@ -104,3 +104,128 @@ jobs:
 
       - name: Build desktop app
         run: npm run build:desktop
+
+  desktop-build-windows:
+    name: Desktop build (Windows, unsigned)
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop app
+        run: npm run build:desktop
+
+      - name: Verify installers install silently
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bundleDir = "apps/desktop/src-tauri/target/release/bundle"
+
+          function Assert-Registered($label) {
+            $entry = Get-ItemProperty `
+              "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*", `
+              "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*", `
+              "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" `
+              -ErrorAction SilentlyContinue |
+              Where-Object { $_.DisplayName -like "*PDF Book Splitter*" }
+            if (-not $entry) {
+              throw "$label installer did not register an uninstall entry"
+            }
+            Write-Host "$label OK: $($entry.DisplayName) $($entry.DisplayVersion)"
+          }
+
+          $msi = Get-ChildItem -Path "$bundleDir/msi" -Filter *.msi -Recurse | Select-Object -First 1
+          if (-not $msi) { throw "No MSI installer found under $bundleDir/msi" }
+          $proc = Start-Process msiexec.exe -ArgumentList "/i `"$($msi.FullName)`" /quiet /norestart /l*v msi-install.log" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            Get-Content msi-install.log -Tail 60
+            throw "MSI install failed with exit code $($proc.ExitCode)"
+          }
+          Assert-Registered "MSI"
+          Start-Process msiexec.exe -ArgumentList "/x `"$($msi.FullName)`" /quiet /norestart" -Wait
+
+          $nsis = Get-ChildItem -Path "$bundleDir/nsis" -Filter *-setup.exe -Recurse | Select-Object -First 1
+          if (-not $nsis) { throw "No NSIS installer found under $bundleDir/nsis" }
+          $proc = Start-Process -FilePath $nsis.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            throw "NSIS install failed with exit code $($proc.ExitCode)"
+          }
+          Assert-Registered "NSIS"
+
+  desktop-build-linux:
+    name: Desktop build (Linux, unsigned)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install Tauri Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            libssl-dev \
+            rpm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop app
+        run: npm run build:desktop
+
+      - name: Verify .deb installs on Ubuntu
+        run: |
+          set -e
+          DEB="$(find apps/desktop/src-tauri/target/release/bundle/deb -name '*.deb' | head -n1)"
+          if [ -z "$DEB" ]; then echo "No .deb found"; exit 1; fi
+          PKG_NAME="$(dpkg-deb -f "$DEB" Package)"
+          sudo dpkg -i "$DEB"
+          dpkg -L "$PKG_NAME"
+          sudo dpkg -r "$PKG_NAME"
+
+      - name: Verify .rpm installs on a clean Fedora container
+        run: |
+          set -e
+          RPM_DIR="apps/desktop/src-tauri/target/release/bundle/rpm"
+          RPM_FILE="$(basename "$(find "$RPM_DIR" -name '*.rpm' | head -n1)")"
+          if [ -z "$RPM_FILE" ]; then echo "No .rpm found"; exit 1; fi
+          docker run --rm -e RPM_FILE="$RPM_FILE" -v "$PWD/$RPM_DIR":/rpms fedora:latest \
+            bash -c 'set -e; dnf install -y "/rpms/$RPM_FILE"; rpm -q "$(rpm -qp --qf "%{NAME}" "/rpms/$RPM_FILE")"'
